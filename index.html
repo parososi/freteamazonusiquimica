@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Frete AMAZON - Usiquímica</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header-logo {
+            max-width: 450px;
+            max-height: 180px;
+            width: auto;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .info-box {
+            background-color: #e0f2fe;
+            border: 2px solid #0000A3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 5px solid #0000A3;
+        }
+
+        .info-box .icon {
+            color: #0000A3;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .form-group label {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tooltip {
+            width: 20px;
+            height: 20px;
+            background-color: #0000A3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+            z-index: 1000;
+        }
+
+        .form-control {
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0000A3;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .cargo-type {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .cargo-option {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .cargo-option:hover {
+            border-color: #0000A3;
+            background: #f8fafc;
+        }
+
+        .cargo-option.selected {
+            border-color: #0000A3;
+            background-color: #e0f2fe;
+            color: #0000A3;
+            font-weight: 600;
+        }
+
+        .cargo-option .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .produtos-section {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 2px solid #0000A3;
+        }
+
+        .produtos-section h3 {
+            color: #0000A3;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .produto-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .produto-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .produto-title {
+            font-weight: 600;
+            color: #1f2937;
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .produto-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%);
+            color: white;
+            flex: 2;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0202d8 0%, #0202d8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%);
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #1e40af 0%, #0202d8 100%);
+        }
+
+        .btn-info {
+            background-color: #0000A3;
+            color: white;
+            margin-top: 15px;
+            padding: 12px 25px;
+            font-size: 0.9rem;
+            border: 2px solid #0000A3;
+        }
+
+        .btn-info:hover {
+            background-color: #0202d8;
+            border-color: #0202d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-export {
+            background-color: #000063;
+            color: white;
+            margin-top: 15px;
+            padding: 12px 25px;
+            font-size: 0.9rem;
+            border: 2px solid #0000A3;
+        }
+
+        .btn-export:hover {
+            background-color: #1e40af;
+            border-color: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes numberRoll {
+            0% { transform: translateY(-20px); opacity: 0; }
+            50% { transform: translateY(-5px); opacity: 0.7; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .number-animation {
+            animation: numberRoll 0.3s ease-out;
+            font-family: 'Courier New', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .counting {
+            font-family: 'Courier New', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .result-header h3 {
+            color: #16a34a;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .produtos-result {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .produto-result-item {
+            background: white;
+            border: 2px solid #0000A3;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .produto-result-header {
+            background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%);
+            color: white;
+            margin: -20px -20px 15px -20px;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+        }
+
+        .produto-result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .result-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .result-item .label {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .result-item .value {
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .omega-highlight {
+            background: linear-gradient(135deg, #cc21cc, #6f0095) !important;
+            color: white !important;
+            border: 2px solid #c920ca !important;
+        }
+
+        .omega-highlight .label,
+        .omega-highlight .value {
+            color: white !important;
+        }
+
+        .summary-container {
+            background: #1f2937;
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .summary-container h4 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .total-box {
+            background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            grid-column: 1 / -1;
+            margin-top: 10px;
+        }
+
+        .total-box .total-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .calculation-details {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .calculation-details h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .calc-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .calc-step:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            color: #0000A3;
+        }
+
+        .timeline-container {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .timeline-container h4 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .chart-container {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .chart-container h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 20px;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #0000A3;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #0000A3;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #0000A3;
+        }
+
+        .methodology-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            border-left: 4px solid #0000A3;
+        }
+
+        .methodology-section h3 {
+            color: #0000A3;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .methodology-section h4 {
+            color: #0000A3;
+            margin-bottom: 10px;
+            margin-top: 20px;
+            font-size: 1.1rem;
+        }
+
+        .methodology-section p, .methodology-section li {
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .methodology-section ul {
+            padding-left: 20px;
+        }
+
+        .formula-box {
+            background-color: #e0f2fe;
+            border: 1px solid #0000A3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #0000A3;
+        }
+
+        .example-box {
+            background-color: #e0f2fe;
+            border: 1px solid #0000A3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #1e40af;
+        }
+
+        .warning-box {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #92400e;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .warning-box ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .warning-box li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cargo-type {
+                flex-direction: column;
+            }
+
+            .buttons-container {
+                flex-direction: column;
+            }
+
+            .produto-fields {
+                grid-template-columns: 1fr;
+            }
+
+            .produto-result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                margin: 10px;
+                padding: 20px;
+                max-height: 90vh;
+            }
+
+            .tooltip:hover::after {
+                white-space: normal;
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://i.ibb.co/RGZ7bxV9/amazon.png" alt="Logo AMAZON TRANSPORTES" class="header-logo" style="filter: brightness(0) invert(1);">            
+            <h1>CALCULADORA DE FRETE</h1>
+            <p style="font-size: 1.1rem; margin-top: 10px;">AMAZON TRANSPORTES</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <span class="icon">💡</span>
+                <strong>Tabela Atualizada:</strong> Valores da AMAZON TRANSPORTES com origem em ITU-SP
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Tipo de Carga
+                    <span class="tooltip" data-tooltip="Sistema de faixas de peso da AMAZON">?</span>
+                </label>
+                <div class="cargo-type">
+                    <div class="cargo-option selected" data-type="fracionada">
+                        <span class="icon">📦</span>
+                        Carga Fracionada
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>
+                        📍 Origem
+                        <span class="tooltip" data-tooltip="Local de coleta da mercadoria">?</span>
+                    </label>
+                    <select class="form-control" id="origem">
+                        <option value="">Selecione a origem</option>
+                        <option value="ITU-SP">ITU-SP</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        🎯 Destino
+                        <span class="tooltip" data-tooltip="Local de entrega da mercadoria">?</span>
+                    </label>
+                    <select class="form-control" id="destino">
+                        <option value="">Selecione o destino</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="produtos-section" id="produtosSection">
+                <h3>📦 Produtos para Cotação</h3>
+                <button class="btn btn-success" onclick="adicionarProduto()">➕ Adicionar Produto</button>
+                <div id="produtosList"></div>
+            </div>
+
+            <div class="buttons-container">
+                <button class="btn btn-primary" onclick="calcularFrete()">☢️ Calcular Frete</button>
+                <button class="btn btn-secondary" onclick="limparFormulario()">🗑️ Limpar Tudo</button>
+            </div>
+
+            <div class="result-container" id="resultContainer">
+                <div class="result-header">
+                    <h3>📋 Resultado da Cotação</h3>
+                    <p id="rotaInfo"></p>
+                </div>
+                <div class="produtos-result" id="produtosResult"></div>
+
+                <div class="total-box">
+                    <div class="total-value animatable" id="totalValue">R$ 0,00</div>
+                    <div>TOTAL DO FRETE (SEM ICMS)</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 5px;">
+                        *ICMS será calculado conforme legislação vigente
+                    </div>
+                    <button class="btn btn-export" onclick="exportarPDF()" style="margin-top: 15px;">
+                        📄 Exportar Cotação em PDF
+                    </button>
+                </div>
+
+                <div class="summary-container">
+                    <h4>📊 Resumo Geral</h4>
+                    <div class="summary-grid" id="summaryGrid"></div>
+                </div>
+
+                <div class="calculation-details" id="calculationDetails">
+                    <h4>📊 Detalhamento do Cálculo</h4>
+                    <div id="calcSteps"></div>
+                </div>
+
+                <div class="chart-container" id="chartContainer">
+                    <h4>💲 Breakdown de Custos</h4>
+                    <div class="chart-wrapper">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="methodologyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Fórmulas e Cálculos Detalhados para Auditoria</h2>
+                <span class="close" onclick="fecharModal()">&times;</span>
+            </div>
+            
+            <div class="methodology-section">
+                <h3>📋 Tabela de Referência (AMAZON TRANSPORTES)</h3>
+                <p>Todos os cálculos são baseados na <strong>tabela oficial da AMAZON TRANSPORTES</strong>. Os valores são exatos conforme o documento.</p>
+            </div>
+
+            <div id="fracionadaMethodology" class="methodology-section" style="display: none;">
+            </div>
+
+            <div class="warning-box">
+                <h4>⚠️ Taxas e Observações Importantes</h4>
+                <p><strong>Taxas aplicáveis conforme necessário:</strong></p>
+                <ul>
+                    <li><strong>GRIS:</strong> 0,20% sobre valor da NF (mínimo R$ 5,25)</li>
+                    <li><strong>AD Valor:</strong> 0,50% sobre valor da NF</li>
+                    <li><strong>SEC/CAT:</strong> R$ 37,50 por conhecimento</li>
+                    <li><strong>Pedágio:</strong> R$ 5,50 por fração de 100kg</li>
+                    <li><strong>TDE (Dificuldade Entrega):</strong> 10% sobre frete (mínimo R$ 177,18)</li>
+                    <li><strong>Reentrega:</strong> 50% sobre o frete</li>
+                    <li><strong>Devolução:</strong> 100% sobre o frete</li>
+                    <li><strong>Seguro Fluvial:</strong> 0,12% (AM/RR/AP)</li>
+                    <li><strong>Redespacho Fluvial:</strong> 7,00% (AM Fluvial/PA Fluvial/AP Geral)</li>
+                    <li><strong>Paletização:</strong> R$ 47,25 por palete padrão</li>
+                    <li><strong>Taxa Agendamento:</strong> R$ 57,75 por evento</li>
+                    <li><strong>TAD (Autenticação):</strong> R$ 5,25 por documento</li>
+                    <li><strong>TDC (Devolução Canhoto):</strong> R$ 4,20 por documento</li>
+                    <li><strong>Taxa Coleta Reversa:</strong> R$ 73,50 por CT-e</li>
+                    <li><strong>Taxa Zona Rural:</strong> R$ 3,50/km (a partir do centro da cidade)</li>
+                    <li><strong>Cubagem:</strong> Considerando 300m²</li>
+                    <li><strong>ICMS/ISS:</strong> NÃO inclusos - serão cobrados conforme legislação</li>
+                </ul>
+            </div>
+
+            <div class="methodology-section">
+                <h3>📄 Condições Comerciais</h3>
+                <p>• <strong>Armazenagem:</strong> 3 dias (FREE TIME)</p>
+                <p>• <strong>Armazenagem cobrada:</strong> R$ 40,95/dia por palete (com seguro 0,20%)</p>
+                <p>• <strong>Faturamento:</strong> Semanal com prazo de 15 dias</p>
+                <p>• <strong>Cobrança:</strong> Bancária sem vínculo ao canhoto de entrega</p>
+                <p>• <strong>Origem:</strong> São Paulo - SP (Matriz)</p>
+                <p>• <strong>Validade da proposta:</strong> 30 dias</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var tabelaFretes = {
+            fracionadas: [
+                // DADOS AMAZON TRANSPORTES - Origem: SÃO PAULO - SP (MATRIZ)
+                // Acre
+                { origem: "ITU-SP", destino: "Rio Branco - AC", ate10: 83.25, ate20: 109.07, ate30: 124.35, ate50: 165.37, ate70: 206.73, ate100: 264.60, ate150: 373.10, ate200: 473.82, excedente: 2.35, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - AC", ate10: 180.63, ate20: 264.85, ate30: 307.03, ate50: 322.70, ate70: 396.95, ate100: 508.12, ate150: 716.42, ate200: 909.88, excedente: 4.54, gris: 0.002, adValor: 0.005 },
+                // Amazonas
+                { origem: "ITU-SP", destino: "Manaus - AM", ate10: 77.90, ate20: 102.04, ate30: 116.32, ate50: 154.72, ate70: 193.40, ate100: 247.53, ate150: 298.83, ate200: 389.10, excedente: 1.95, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - AM", ate10: 149.57, ate20: 195.95, ate30: 223.38, ate50: 297.07, ate70: 371.38, ate100: 475.33, ate150: 670.23, ate200: 851.22, excedente: 4.25, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Fluvial - AM", ate10: 310.60, ate20: 406.89, ate30: 463.88, ate50: 616.92, ate70: 771.16, ate100: 859.60, ate150: 1250.33, ate200: 1641.06, excedente: 7.81, gris: 0.002, adValor: 0.005 },
+                // Amapá
+                { origem: "ITU-SP", destino: "Macapá - AP", ate10: 80.12, ate20: 104.98, ate30: 119.66, ate50: 159.16, ate70: 198.94, ate100: 254.65, ate150: 359.06, ate200: 455.99, excedente: 2.29, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - AP", ate10: 153.87, ate20: 201.56, ate30: 229.79, ate50: 305.62, ate70: 382.02, ate100: 488.98, ate150: 689.49, ate200: 875.63, excedente: 4.38, gris: 0.002, adValor: 0.005 },
+                // Pará
+                { origem: "ITU-SP", destino: "Belém - PA", ate10: 65.77, ate20: 86.15, ate30: 98.22, ate50: 117.38, ate70: 143.64, ate100: 182.26, ate150: 231.03, ate200: 308.04, excedente: 1.54, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - PA", ate10: 126.31, ate20: 165.46, ate30: 188.61, ate50: 250.87, ate70: 313.59, ate100: 401.39, ate150: 487.20, ate200: 607.68, excedente: 3.04, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Fluvial - PA", ate10: 160.75, ate20: 210.58, ate30: 240.06, ate50: 319.26, ate70: 399.15, ate100: 510.86, ate150: 720.34, ate200: 914.81, excedente: 4.56, gris: 0.002, adValor: 0.005 },
+                // Rondônia
+                { origem: "ITU-SP", destino: "Porto Velho - RO", ate10: 81.04, ate20: 106.16, ate30: 121.02, ate50: 160.96, ate70: 201.21, ate100: 257.55, ate150: 363.14, ate200: 461.20, excedente: 1.85, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - RO", ate10: 136.18, ate20: 178.39, ate30: 203.36, ate50: 270.47, ate70: 338.09, ate100: 432.74, ate150: 610.17, ate200: 774.93, excedente: 3.11, gris: 0.002, adValor: 0.005 },
+                // Roraima
+                { origem: "ITU-SP", destino: "Boa Vista - RR", ate10: 91.10, ate20: 119.34, ate30: 136.06, ate50: 180.93, ate70: 226.18, ate100: 289.49, ate150: 408.20, ate200: 518.39, excedente: 2.59, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - RR", ate10: 174.93, ate20: 229.16, ate30: 261.22, ate50: 347.47, ate70: 434.31, ate100: 555.93, ate150: 783.85, ate200: 995.47, excedente: 4.97, gris: 0.002, adValor: 0.005 },
+                // Mato Grosso
+                { origem: "ITU-SP", destino: "Cuiabá - MT", ate10: 66.53, ate20: 72.96, ate30: 76.53, ate50: 93.16, ate70: 106.46, ate100: 123.09, ate150: 183.67, ate200: 244.89, excedente: 1.22, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - MT", ate10: 169.56, ate20: 186.51, ate30: 194.97, ate50: 237.36, ate70: 271.27, ate100: 313.66, ate150: 470.38, ate200: 627.17, excedente: 3.14, gris: 0.002, adValor: 0.005 },
+                // Mato Grosso do Sul
+                { origem: "ITU-SP", destino: "Campo Grande - MS", ate10: 60.41, ate20: 66.45, ate30: 69.45, ate50: 84.57, ate70: 96.65, ate100: 111.74, ate150: 166.66, ate200: 222.21, excedente: 1.11, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - MS", ate10: 86.84, ate20: 95.54, ate30: 99.88, ate50: 121.58, ate70: 138.96, ate100: 160.68, ate150: 239.59, ate200: 319.45, excedente: 1.60, gris: 0.002, adValor: 0.005 },
+                // Goiás
+                { origem: "ITU-SP", destino: "Goiânia - GO", ate10: 57.87, ate20: 63.64, ate30: 66.54, ate50: 80.99, ate70: 92.57, ate100: 107.04, ate150: 159.86, ate200: 213.14, excedente: 1.07, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - GO", ate10: 84.26, ate20: 92.68, ate30: 96.90, ate50: 117.95, ate70: 134.81, ate100: 155.88, ate150: 232.99, ate200: 310.66, excedente: 1.55, gris: 0.002, adValor: 0.005 },
+                // Distrito Federal
+                { origem: "ITU-SP", destino: "Brasília - DF", ate10: 62.87, ate20: 69.15, ate30: 72.30, ate50: 88.01, ate70: 100.59, ate100: 116.31, ate150: 173.46, ate200: 231.28, excedente: 1.16, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - DF", ate10: 82.78, ate20: 91.06, ate30: 95.20, ate50: 115.91, ate70: 132.47, ate100: 153.17, ate150: 228.60, ate200: 304.79, excedente: 1.52, gris: 0.002, adValor: 0.005 },
+                // Tocantins
+                { origem: "ITU-SP", destino: "Palmas - TO", ate10: 83.87, ate20: 92.25, ate30: 96.45, ate50: 117.42, ate70: 134.20, ate100: 155.16, ate150: 232.98, ate200: 310.64, excedente: 1.55, gris: 0.002, adValor: 0.005 },
+                { origem: "ITU-SP", destino: "Interior - TO", ate10: 134.71, ate20: 148.19, ate30: 154.93, ate50: 188.62, ate70: 204.77, ate100: 215.55, ate150: 373.67, ate200: 498.22, excedente: 2.49, gris: 0.002, adValor: 0.005 }
+            ]
+        };
+
+        var ultimoCalculoRealizado = {};
+
+        // CONFIGURAÇÕES AMAZON TRANSPORTES
+        var config = {
+            grisPercentual: 0.002,      // 0,20% GRIS
+            grisMinimo: 5.25,           // Mínimo R$ 5,25
+            advPercentual: 0.005,       // 0,50% AD VALOREM
+            secCat: 37.50,              // R$ 37,50 por conhecimento
+            pedagioPor100: 5.50,        // R$ 5,50 por fração de 100kg
+            tdePercentual: 0.10,        // 10% TDE
+            tdeMinimo: 177.18,          // Mínimo R$ 177,18
+            reentrega: 0.50,            // 50% sobre frete
+            devolucao: 1.00,            // 100% sobre frete
+            seguroFluvial: 0.0012,      // 0,12%
+            redespacho: 0.07,           // 7,00%
+            paletizacao: 47.25,         // R$ 47,25 por palete
+            taxaAgendamento: 57.75,     // R$ 57,75
+            tad: 5.25,                  // R$ 5,25
+            tdc: 4.20,                  // R$ 4,20
+            coletaReversa: 73.50,       // R$ 73,50
+            zonaRural: 3.50,            // R$ 3,50/km
+            armazenagem: 40.95,         // R$ 40,95/dia por palete
+            freeTime: 3                 // 3 dias
+        };
+
+        var produtos = [];
+        var contadorProduto = 0;
+
+        function animateNumber(element, targetValue, duration) {
+            if (!duration) duration = 1200;
+            
+            var startValue = 0;
+            var startTime = Date.now();
+            var originalText = element.textContent;
+            
+            element.classList.add('counting');
+            
+            function updateValue() {
+                var elapsed = Date.now() - startTime;
+                var progress = Math.min(elapsed / duration, 1);
+                var easeOut = 1 - Math.pow(1 - progress, 3);
+                var currentValue = startValue + (targetValue * easeOut);
+                
+                if (originalText.indexOf('/kg') > -1) {
+                    element.textContent = 'R$ ' + currentValue.toFixed(4) + '/kg';
+                } else if (originalText.indexOf('/ton') > -1) {
+                    element.textContent = 'R$ ' + currentValue.toFixed(2) + '/ton';
+                } else if (originalText.indexOf('R$') > -1) {
+                    element.textContent = 'R$ ' + currentValue.toFixed(2);
+                } else {
+                    element.textContent = currentValue.toFixed(2);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateValue);
+                } else {
+                    element.textContent = originalText;
+                    element.classList.remove('counting');
+                    element.classList.add('number-animation');
+                    setTimeout(function() {
+                        element.classList.remove('number-animation');
+                    }, 300);
+                }
+            }
+            
+            requestAnimationFrame(updateValue);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            configurarEventos();
+            adicionarProduto();
+        });
+
+        function carregarDestinos() {
+            var origemSelect = document.getElementById('origem');
+            var destinoSelect = document.getElementById('destino');
+            var origem = origemSelect.value;
+
+            destinoSelect.innerHTML = '<option value="">Selecione o destino</option>';
+
+            if (origem) {
+                var destinos = tabelaFretes.fracionadas
+                    .filter(function(item) { return item.origem === origem; })
+                    .map(function(item) { return item.destino; });
+
+                destinos.forEach(function(destino) {
+                    var option = document.createElement('option');
+                    option.value = destino;
+                    option.textContent = destino;
+                    destinoSelect.appendChild(option);
+                });
+            }
+        }
+
+        function configurarEventos() {
+            document.getElementById('origem').addEventListener('change', carregarDestinos);
+        }
+
+        function adicionarProduto() {
+            contadorProduto++;
+            var produto = {
+                id: contadorProduto,
+                nome: 'Produto ' + contadorProduto,
+                peso: 0,
+                valorNota: 0
+            };
+            produtos.push(produto);
+            renderizarProdutos();
+        }
+
+        function removerProduto(id) {
+            produtos = produtos.filter(function(p) { return p.id !== id; });
+            if (produtos.length === 0) {
+                adicionarProduto();
+            }
+            renderizarProdutos();
+        }
+
+        function renderizarProdutos() {
+            var container = document.getElementById('produtosList');
+            var html = '';
+
+            produtos.forEach(function(produto) {
+                html += '<div class="produto-item">';
+                html += '<div class="produto-header">';
+                html += '<div class="produto-title">🏷️ ' + produto.nome + '</div>';
+                if (produtos.length > 1) {
+                    html += '<button class="btn-remove" onclick="removerProduto(' + produto.id + ')">✖ Remover</button>';
+                }
+                html += '</div>';
+                html += '<div class="produto-fields">';
+                html += '<div class="form-group">';
+                html += '<label>Nome do Produto</label>';
+                html += '<input type="text" class="form-control" value="' + produto.nome + '" onchange="atualizarProduto(' + produto.id + ', \'nome\', this.value)">';
+                html += '</div>';
+                html += '<div class="form-group">';
+                html += '<label>⚖️ Peso (kg)</label>';
+                html += '<input type="number" class="form-control" value="' + produto.peso + '" min="0.1" step="0.1" onchange="atualizarProduto(' + produto.id + ', \'peso\', parseFloat(this.value))">';
+                html += '</div>';
+                html += '<div class="form-group">';
+                html += '<label>💰 Valor da NF (R$)</label>';
+                html += '<input type="number" class="form-control" value="' + produto.valorNota + '" min="0" step="0.01" onchange="atualizarProduto(' + produto.id + ', \'valorNota\', parseFloat(this.value))">';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function atualizarProduto(id, campo, valor) {
+            var produto = produtos.find(function(p) { return p.id === id; });
+            if (produto) {
+                produto[campo] = valor;
+            }
+        }
+
+        function calcularFrete() {
+            var origem = document.getElementById('origem').value;
+            var destino = document.getElementById('destino').value;
+
+            if (!origem) {
+                alert('Por favor, selecione a origem!');
+                return;
+            }
+
+            if (!destino) {
+                alert('Por favor, selecione o destino!');
+                return;
+            }
+
+            calcularFreteFracionado(origem, destino);
+        }
+
+        function calcularFreteFracionado(origem, destino) {
+            var pesoTotal = produtos.reduce(function(total, p) { return total + (p.peso || 0); }, 0);
+            var valorNotaTotal = produtos.reduce(function(total, p) { return total + (p.valorNota || 0); }, 0);
+
+            if (pesoTotal === 0) {
+                alert('Por favor, informe o peso dos produtos!');
+                return;
+            }
+
+            var rota = tabelaFretes.fracionadas.find(function(item) {
+                return item.origem === origem && item.destino === destino;
+            });
+
+            if (!rota) {
+                alert('Rota não encontrada na tabela de preços AMAZON!');
+                return;
+            }
+
+            // CÁLCULO AMAZON - SISTEMA DE FAIXAS
+            var freteBase = 0;
+            if (pesoTotal <= 10) {
+                freteBase = rota.ate10;
+            } else if (pesoTotal <= 20) {
+                freteBase = rota.ate20;
+            } else if (pesoTotal <= 30) {
+                freteBase = rota.ate30;
+            } else if (pesoTotal <= 50) {
+                freteBase = rota.ate50;
+            } else if (pesoTotal <= 70) {
+                freteBase = rota.ate70;
+            } else if (pesoTotal <= 100) {
+                freteBase = rota.ate100;
+            } else if (pesoTotal <= 150) {
+                freteBase = rota.ate150;
+            } else if (pesoTotal <= 200) {
+                freteBase = rota.ate200;
+            } else {
+                // Acima de 200kg: valor da faixa 200kg + excedente
+                var excedente = pesoTotal - 200;
+                freteBase = rota.ate200 + (excedente * rota.excedente);
+            }
+            
+            // Pedágio: R$ 5,50 por fração de 100kg
+            var pedagio = Math.ceil(pesoTotal / 100) * config.pedagioPor100;
+            
+            // AD Valor: 0,50% sobre valor da NF
+            var adv = valorNotaTotal * config.advPercentual;
+            
+            // GRIS: 0,20% com mínimo R$ 5,25
+            var gris = Math.max(valorNotaTotal * config.grisPercentual, config.grisMinimo);
+            
+            // SEC/CAT: R$ 37,50 por produto
+            var secCat = config.secCat * produtos.length;
+            
+            var totalGeral = freteBase + pedagio + adv + gris + secCat;
+
+            var resultadosProdutos = [];
+            produtos.forEach(function(produto) {
+                if (produto.peso <= 0) return;
+
+                var proporcaoPeso = produto.peso / pesoTotal;
+                var proporcaoNota = valorNotaTotal > 0 ? produto.valorNota / valorNotaTotal : 0;
+
+                var freteBaseProduto = freteBase * proporcaoPeso;
+                var pedagogioProduto = pedagio * proporcaoPeso;
+                var advProduto = adv * proporcaoNota;
+                var grisProduto = gris * proporcaoNota;
+                var secCatProduto = config.secCat;
+
+                var totalProduto = freteBaseProduto + pedagogioProduto + advProduto + grisProduto + secCatProduto;
+                var valorOmegaProduto = totalProduto / (produto.peso / 1000);
+
+                resultadosProdutos.push({
+                    produto: produto,
+                    freteBase: freteBaseProduto,
+                    pedagio: pedagogioProduto,
+                    adv: advProduto,
+                    gris: grisProduto,
+                    secCat: secCatProduto,
+                    total: totalProduto,
+                    valorOmega: valorOmegaProduto,
+                    precoKg: totalProduto / produto.peso
+                });
+            });
+
+            var totaisResumo = {
+                peso: pesoTotal,
+                valorNota: valorNotaTotal,
+                frete: totalGeral,
+                precoMedioKg: totalGeral / pesoTotal,
+                freteBase: freteBase,
+                pedagio: pedagio,
+                adv: adv,
+                gris: gris,
+                secCat: secCat
+            };
+
+            exibirResultado({
+                rota: origem + ' → ' + destino,
+                produtos: resultadosProdutos,
+                totais: totaisResumo,
+                tipoCalculo: 'fracionada'
+            });
+        }
+
+        function exibirResultado(dados) {
+            ultimoCalculoRealizado = dados;
+            
+            var container = document.getElementById('resultContainer');
+            var rotaInfo = document.getElementById('rotaInfo');
+            var produtosResult = document.getElementById('produtosResult');
+            var summaryGrid = document.getElementById('summaryGrid');
+            var totalValue = document.getElementById('totalValue');
+            var calcSteps = document.getElementById('calcSteps');
+
+            rotaInfo.textContent = dados.rota;
+            totalValue.textContent = 'R$ ' + dados.totais.frete.toFixed(2);
+
+            var produtosHTML = '';
+            dados.produtos.forEach(function(item) {
+                produtosHTML += '<div class="produto-result-item">';
+                produtosHTML += '<div class="produto-result-header">🏷️ ' + item.produto.nome + ' (' + item.produto.peso + 'kg)</div>';
+                produtosHTML += '<div class="produto-result-grid">';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">Frete Base</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.freteBase.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">Pedágio</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.pedagio.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">ADV (0,50%)</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.adv.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">GRIS (0,20%)</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.gris.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">SEC/CAT</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.secCat.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item">';
+                produtosHTML += '<div class="label">Preço/kg</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.precoKg.toFixed(4) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '<div class="result-item omega-highlight">';
+                produtosHTML += '<div class="label">VALOR ÔMEGA</div>';
+                produtosHTML += '<div class="value animatable">R$ ' + item.valorOmega.toFixed(2) + '/ton</div>';
+                produtosHTML += '</div>';
+                
+                produtosHTML += '<div class="result-item" style="grid-column: 1 / -1; background: linear-gradient(135deg, #0000A3 0%, #0000A3 100%); color: white; font-weight: bold;">';
+                produtosHTML += '<div class="label" style="color: white;">TOTAL DESTE PRODUTO</div>';
+                produtosHTML += '<div class="value animatable" style="color: white; font-size: 1.2rem;">R$ ' + item.total.toFixed(2) + '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '</div>';
+                produtosHTML += '</div>';
+            });
+
+            produtosResult.innerHTML = produtosHTML;
+
+            var summaryHTML = '';
+            summaryHTML += '<div class="summary-item">';
+            summaryHTML += '<div class="summary-value">' + dados.produtos.length + '</div>';
+            summaryHTML += '<div>Produtos</div>';
+            summaryHTML += '</div>';
+            summaryHTML += '<div class="summary-item">';
+            summaryHTML += '<div class="summary-value">' + dados.totais.peso.toFixed(1) + 'kg</div>';
+            summaryHTML += '<div>Peso Total</div>';
+            summaryHTML += '</div>';
+            summaryHTML += '<div class="summary-item">';
+            summaryHTML += '<div class="summary-value">R$ ' + dados.totais.valorNota.toFixed(2) + '</div>';
+            summaryHTML += '<div>Valor Total NF</div>';
+            summaryHTML += '</div>';
+            summaryHTML += '<div class="summary-item">';
+            summaryHTML += '<div class="summary-value">R$ ' + dados.totais.precoMedioKg.toFixed(4) + '</div>';
+            summaryHTML += '<div>Preço Médio/kg</div>';
+            summaryHTML += '</div>';
+
+            summaryGrid.innerHTML = summaryHTML;
+
+            var stepsHTML = '';
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span>Frete base <span style="color: #6b7280; font-size: 0.85em;">(sistema de faixas)</span></span>';
+            stepsHTML += '<span class="animatable">R$ ' + dados.totais.freteBase.toFixed(2) + '</span>';
+            stepsHTML += '</div>';
+            
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span>Pedágio <span style="color: #6b7280; font-size: 0.85em;">(R$ 5,50 por fração de 100kg)</span></span>';
+            stepsHTML += '<span class="animatable">R$ ' + dados.totais.pedagio.toFixed(2) + '</span>';
+            stepsHTML += '</div>';
+            
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span>ADV (0,50%)</span>';
+            stepsHTML += '<span class="animatable">R$ ' + dados.totais.adv.toFixed(2) + '</span>';
+            stepsHTML += '</div>';
+            
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span>GRIS (0,20%) <span style="color: #6b7280; font-size: 0.85em;">(mín. R$ 5,25)</span></span>';
+            stepsHTML += '<span class="animatable">R$ ' + dados.totais.gris.toFixed(2) + '</span>';
+            stepsHTML += '</div>';
+            
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span>SEC/CAT <span style="color: #6b7280; font-size: 0.85em;">(R$ 37,50 × ' + dados.produtos.length + ' produtos)</span></span>';
+            stepsHTML += '<span class="animatable">R$ ' + dados.totais.secCat.toFixed(2) + '</span>';
+            stepsHTML += '</div>';
+            
+            stepsHTML += '<div class="calc-step">';
+            stepsHTML += '<span><strong>TOTAL GERAL <span style="color: #6b7280; font-weight: normal;">(R$ ' + dados.totais.precoMedioKg.toFixed(4) + '/kg)</span></strong></span>';
+            stepsHTML += '<span class="animatable"><strong>R$ ' + dados.totais.frete.toFixed(2) + '</strong></span>';
+            stepsHTML += '</div>';
+
+            calcSteps.innerHTML = stepsHTML;
+
+            var buttonContainer = calcSteps.parentNode.querySelector('.methodology-button');
+            if (!buttonContainer) {
+                buttonContainer = document.createElement('div');
+                buttonContainer.className = 'methodology-button';
+                buttonContainer.style.textAlign = 'center';
+                calcSteps.parentNode.appendChild(buttonContainer);
+            }
+            buttonContainer.innerHTML = '<button class="btn btn-info" onclick="mostrarMetodologia(\'fracionada\')">📋 Ver Fórmulas e Cálculos Detalhados</button>';
+
+            var observacoes = document.getElementById('observacoes') || document.createElement('div');
+            observacoes.id = 'observacoes';
+            observacoes.className = 'calculation-details';
+            
+            var observacoesHTML = '';
+            observacoesHTML += '<h4 style="color: #dc2626;">⚠️ Importante - Condições AMAZON TRANSPORTES</h4>';
+            observacoesHTML += '<div style="font-size: 0.9rem; color: #4b5563; line-height: 1.6;">';
+            observacoesHTML += '<p><strong>Sistema de cálculo:</strong></p>';
+            observacoesHTML += '<div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px; margin: 10px 0;">';
+            observacoesHTML += '<strong style="color: #92400e;">Faixas de peso AMAZON:</strong>';
+            observacoesHTML += '<ul style="margin: 8px 0; padding-left: 20px; color: #92400e;">';
+            observacoesHTML += '<li>Até 10kg | 10-20kg | 20-30kg | 30-50kg | 50-70kg | 70-100kg</li>';
+            observacoesHTML += '<li>100-150kg | 150-200kg | Acima de 200kg (+ valor excedente/kg)</li>';
+            observacoesHTML += '<li><strong>GRIS:</strong> 0,20% sobre valor da NF (mínimo R$ 5,25)</li>';
+            observacoesHTML += '<li><strong>AD Valor:</strong> 0,50% sobre valor da NF</li>';
+            observacoesHTML += '<li><strong>Pedágio:</strong> R$ 5,50 por fração de 100kg</li>';
+            observacoesHTML += '<li><strong>SEC/CAT:</strong> R$ 37,50 por conhecimento</li>';
+            observacoesHTML += '</ul>';
+            observacoesHTML += '</div>';
+            observacoesHTML += '<p><strong>Outras taxas aplicáveis quando necessário:</strong></p>';
+            observacoesHTML += '<ul style="margin: 10px 0; padding-left: 20px;">';
+            observacoesHTML += '<li><strong>TDE:</strong> 10% sobre frete (mínimo R$ 177,18)</li>';
+            observacoesHTML += '<li><strong>Reentrega:</strong> 50% sobre o frete</li>';
+            observacoesHTML += '<li><strong>Devolução:</strong> 100% sobre o frete</li>';
+            observacoesHTML += '<li><strong>Seguro Fluvial:</strong> 0,12% (AM/RR/AP)</li>';
+            observacoesHTML += '<li><strong>Redespacho Fluvial:</strong> 7,00%</li>';
+            observacoesHTML += '<li><strong>Paletização:</strong> R$ 47,25 por palete</li>';
+            observacoesHTML += '<li><strong>Agendamento:</strong> R$ 57,75 por evento</li>';
+            observacoesHTML += '<li><strong>Zona Rural:</strong> R$ 3,50/km</li>';
+            observacoesHTML += '<li><strong>Armazenagem:</strong> 3 dias free, depois R$ 40,95/dia por palete</li>';
+            observacoesHTML += '<li><strong>ICMS/ISS:</strong> NÃO inclusos - cobrados conforme legislação</li>';
+            observacoesHTML += '</ul>';
+            observacoesHTML += '<p style="color: #dc2626; font-weight: 600;">⚠️ Valores e condições conforme tabela oficial AMAZON TRANSPORTES</p>';
+            observacoesHTML += '<p style="color: #0000A3; font-weight: 600;">📋 Faturamento: Semanal com prazo de 15 dias</p>';
+            observacoesHTML += '<p style="color: #0000A3; font-weight: 600;">📦 Validade da proposta: 30 dias</p>';
+            observacoesHTML += '</div>';
+            
+            observacoes.innerHTML = observacoesHTML;
+            
+            if (!document.getElementById('observacoes')) {
+                container.appendChild(observacoes);
+            }
+
+            criarBreakdownCustos(dados);
+
+            container.classList.add('show');
+            container.scrollIntoView({ behavior: 'smooth' });
+
+            setTimeout(function() {
+                var totalElement = document.querySelector('.total-value.animatable');
+                if (totalElement) {
+                    setTimeout(function() {
+                        animateNumber(totalElement, dados.totais.frete, 1500);
+                    }, 200);
+                }
+
+                var animatableElements = document.querySelectorAll('.result-item .value.animatable');
+                animatableElements.forEach(function(element, index) {
+                    setTimeout(function() {
+                        var text = element.textContent;
+                        var match = text.match(/R\$ ([\d,\.]+)/);
+                        if (match) {
+                            var value = parseFloat(match[1].replace(',', '.'));
+                            animateNumber(element, value, 1000);
+                        }
+                    }, 400 + (index * 150));
+                });
+
+                var calcElements = document.querySelectorAll('.calc-step .animatable');
+                calcElements.forEach(function(element, index) {
+                    setTimeout(function() {
+                        var text = element.textContent;
+                        var match = text.match(/R\$ ([\d,\.]+)/);
+                        if (match) {
+                            var value = parseFloat(match[1].replace(',', '.'));
+                            animateNumber(element, value, 800);
+                        }
+                    }, 800 + (index * 100));
+                });
+            }, 300);
+        }
+
+        function criarBreakdownCustos(dados) {
+            var chartContainer = document.getElementById('chartContainer');
+            chartContainer.style.display = 'block';
+            
+            var ctx = document.getElementById('costChart').getContext('2d');
+            
+            var labels = [];
+            var values = [];
+            var colors = ['#0000A3', '#8f46ff', '#60a5fa', '#93e1fd', '#34d399'];
+            
+            if (dados.totais.freteBase > 0) {
+                labels.push('Frete Base');
+                values.push(dados.totais.freteBase);
+            }
+            if (dados.totais.pedagio > 0) {
+                labels.push('Pedágio');
+                values.push(dados.totais.pedagio);
+            }
+            if (dados.totais.adv > 0) {
+                labels.push('ADV');
+                values.push(dados.totais.adv);
+            }
+            if (dados.totais.gris > 0) {
+                labels.push('GRIS');
+                values.push(dados.totais.gris);
+            }
+            if (dados.totais.secCat > 0) {
+                labels.push('SEC/CAT');
+                values.push(dados.totais.secCat);
+            }
+            
+            if (labels.length === 0 || values.length === 0) {
+                chartContainer.style.display = 'none';
+                return;
+            }
+            
+            if (window.costChartInstance) {
+                window.costChartInstance.destroy();
+            }
+            
+            try {
+                window.costChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: colors.slice(0, labels.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.label;
+                                        var value = context.parsed;
+                                        var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var percentage = ((value / total) * 100).toFixed(1);
+                                        return label + ': R$ ' + value.toFixed(2) + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '50%'
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao criar gráfico:', error);
+                chartContainer.style.display = 'none';
+            }
+        }
+
+        function exportarPDF() {
+            if (!ultimoCalculoRealizado || !ultimoCalculoRealizado.totais) {
+                alert('Nenhuma cotação disponível! Faça um cálculo primeiro.');
+                return;
+            }
+
+            if (!window.jspdf) {
+                alert('Biblioteca jsPDF não carregada. Recarregue a página.');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                
+                function limpar(texto) {
+                    if (!texto) return '';
+                    return String(texto)
+                        .replace(/[áàâãä]/g, 'a')
+                        .replace(/[éèêë]/g, 'e')
+                        .replace(/[íìîï]/g, 'i')
+                        .replace(/[óòôõö]/g, 'o')
+                        .replace(/[úùûü]/g, 'u')
+                        .replace(/[ç]/g, 'c')
+                        .replace(/[ÁÀÂÃÄ]/g, 'A')
+                        .replace(/[ÉÈÊË]/g, 'E')
+                        .replace(/[ÍÌÎÏ]/g, 'I')
+                        .replace(/[ÓÒÔÕÖ]/g, 'O')
+                        .replace(/[ÚÙÛÜ]/g, 'U')
+                        .replace(/[Ç]/g, 'C');
+                }
+                
+                const dados = ultimoCalculoRealizado;
+                const pageWidth = doc.internal.pageSize.width;
+                const pageHeight = doc.internal.pageSize.height;
+                const margin = 20;
+                const contentWidth = pageWidth - (2 * margin);
+                let yPos = margin;
+
+                function checkNewPage(requiredSpace) {
+                    if (yPos + requiredSpace > pageHeight - margin) {
+                        doc.addPage();
+                        yPos = margin;
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Header
+                doc.setFillColor(0, 0, 163);
+                doc.rect(0, 0, pageWidth, 45, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(22);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('USIQUIMICA - COTACAO DE FRETE'), pageWidth/2, 15, { align: 'center' });
+                
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "normal");
+                doc.text('AMAZON TRANSPORTES', pageWidth/2, 25, { align: 'center' });
+                
+                const agora = new Date();
+                const dataFormatada = agora.toLocaleDateString('pt-BR') + ' as ' + agora.toLocaleTimeString('pt-BR');
+                doc.setFontSize(11);
+                doc.text(limpar('Gerado em: ' + dataFormatada), pageWidth/2, 38, { align: 'center' });
+
+                yPos = 60;
+                doc.setTextColor(0, 0, 0);
+
+                // Informações da cotação
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('INFORMACOES DA COTACAO'), margin, yPos);
+                yPos += 12;
+
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Rota: ' + dados.rota), margin, yPos);
+                yPos += 6;
+                doc.text(limpar('Tipo: Carga Fracionada (Sistema de Faixas de Peso)'), margin, yPos);
+                yPos += 18;
+
+                // Detalhamento dos produtos
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('DETALHAMENTO DOS PRODUTOS'), margin, yPos);
+                yPos += 12;
+
+                dados.produtos.forEach((item, index) => {
+                    checkNewPage(85);
+                    
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(margin, yPos, contentWidth, 80, 'F');
+                    doc.setDrawColor(0, 0, 163);
+                    doc.setLineWidth(0.5);
+                    doc.rect(margin, yPos, contentWidth, 80);
+
+                    doc.setFontSize(13);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(0, 0, 163);
+                    var tituloTexto = limpar(item.produto.nome + ' (' + item.produto.peso + 'kg)');
+                    doc.text(tituloTexto, margin + 5, yPos + 8);
+                    
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    
+                    doc.text(limpar('Valor NF: R$ ' + item.produto.valorNota.toFixed(2)), margin + 5, yPos + 18);
+                    doc.text(limpar('Preco/kg: R$ ' + item.precoKg.toFixed(4)), margin + 105, yPos + 18);
+                    
+                    doc.text(limpar('Frete base: R$ ' + item.freteBase.toFixed(2)), margin + 5, yPos + 28);
+                    doc.text(limpar('Pedagio: R$ ' + item.pedagio.toFixed(2)), margin + 105, yPos + 28);
+                    
+                    doc.text(limpar('ADV (0,50%): R$ ' + item.adv.toFixed(2)), margin + 5, yPos + 38);
+                    doc.text(limpar('GRIS (0,20%): R$ ' + item.gris.toFixed(2)), margin + 105, yPos + 38);
+                    
+                    doc.text(limpar('SEC/CAT: R$ ' + item.secCat.toFixed(2)), margin + 5, yPos + 48);
+                    
+                    doc.setFillColor(204, 33, 204);
+                    doc.rect(margin + 5, yPos + 55, 90, 10, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.text(limpar('OMEGA: R$ ' + item.valorOmega.toFixed(2) + '/ton'), margin + 8, yPos + 62);
+                    
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.text(limpar('TOTAL: R$ ' + item.total.toFixed(2)), margin + 5, yPos + 75);
+                    
+                    yPos += 88;
+                });
+
+                // Resumo
+                checkNewPage(50);
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('RESUMO GERAL'), margin, yPos);
+                yPos += 15;
+
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Total de produtos: ' + dados.produtos.length), margin, yPos);
+                doc.text(limpar('Peso total: ' + dados.totais.peso.toFixed(1) + 'kg'), margin + 105, yPos);
+                yPos += 8;
+                doc.text(limpar('Valor total NF: R$ ' + dados.totais.valorNota.toFixed(2)), margin, yPos);
+                doc.text(limpar('Preco medio/kg: R$ ' + dados.totais.precoMedioKg.toFixed(4)), margin + 105, yPos);
+                yPos += 20;
+
+                // Total
+                checkNewPage(35);
+                doc.setFillColor(0, 0, 163);
+                doc.rect(margin, yPos - 5, contentWidth, 28, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('TOTAL DO FRETE: R$ ' + dados.totais.frete.toFixed(2)), pageWidth/2, yPos + 8, { align: 'center' });
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('(SEM ICMS)'), pageWidth/2, yPos + 18, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                yPos += 40;
+
+                // Nova página para observações
+                doc.addPage();
+                yPos = margin;
+
+                // Observações
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('OBSERVACOES IMPORTANTES'), margin, yPos);
+                yPos += 12;
+
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                const observacoes = [
+                    'ICMS/ISS nao incluidos - serao calculados conforme legislacao',
+                    'Valores baseados na tabela oficial AMAZON TRANSPORTES',
+                    '>>> SISTEMA DE FAIXAS DE PESO AMAZON <<<',
+                    'Ate 10kg | 10-20kg | 20-30kg | 30-50kg | 50-70kg | 70-100kg',
+                    '100-150kg | 150-200kg | Acima 200kg (fixo + excedente)',
+                    'ADV (Ad Valorem): 0,50% sobre valor da NF',
+                    'GRIS: 0,20% sobre valor da NF (minimo R$ 5,25)',
+                    'Pedagio: R$ 5,50 por fracao de 100kg',
+                    'SEC/CAT: R$ 37,50 por conhecimento',
+                    'TDE (Dificuldade Entrega): 10% sobre frete (min. R$ 177,18)',
+                    'Reentrega: 50% sobre o frete',
+                    'Devolucao: 100% sobre o frete',
+                    'Seguro Fluvial: 0,12% (AM/RR/AP)',
+                    'Redespacho Fluvial: 7,00% (AM Fluvial/PA Fluvial/AP Geral)',
+                    'Paletizacao: R$ 47,25 por palete padrao',
+                    'Taxa Agendamento: R$ 57,75 por evento',
+                    'TAD (Autenticacao): R$ 5,25 por documento',
+                    'TDC (Devolucao Canhoto): R$ 4,20 por documento',
+                    'Taxa Coleta Reversa: R$ 73,50 por CT-e',
+                    'Taxa Zona Rural: R$ 3,50/km (a partir centro cidade)',
+                    'Armazenagem: 3 dias FREE TIME',
+                    'Pos free time: R$ 40,95/dia por palete (com seguro 0,20%)',
+                    'Cubagem: Considerando 300m2',
+                    'Faturamento: Semanal com prazo de 15 dias',
+                    'Cobranca: Bancaria sem vinculo ao canhoto de entrega',
+                    'Origem: Sao Paulo - SP (Matriz)',
+                    'Validade da proposta: 30 dias'
+                ];
+
+                observacoes.forEach((obs) => {
+                    checkNewPage(6);
+                    doc.text(limpar('- ' + obs), margin, yPos);
+                    yPos += 5;
+                });
+
+                // Nova página para fórmulas e auditoria
+                doc.addPage();
+                yPos = margin;
+
+                doc.setFillColor(0, 0, 163);
+                doc.rect(0, 0, pageWidth, 25, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('FORMULAS E CALCULOS PARA AUDITORIA'), pageWidth/2, 15, { align: 'center' });
+                
+                yPos = 35;
+                doc.setTextColor(0, 0, 0);
+
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('1. FRETE BASE (Sistema de Faixas)'), margin, yPos);
+                yPos += 8;
+
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                
+                var faixaTexto = 'Peso total: ' + dados.totais.peso.toFixed(1) + 'kg';
+                if (dados.totais.peso <= 10) {
+                    faixaTexto += ' -> Faixa: ate 10kg';
+                } else if (dados.totais.peso <= 20) {
+                    faixaTexto += ' -> Faixa: 10-20kg';
+                } else if (dados.totais.peso <= 30) {
+                    faixaTexto += ' -> Faixa: 20-30kg';
+                } else if (dados.totais.peso <= 50) {
+                    faixaTexto += ' -> Faixa: 30-50kg';
+                } else if (dados.totais.peso <= 70) {
+                    faixaTexto += ' -> Faixa: 50-70kg';
+                } else if (dados.totais.peso <= 100) {
+                    faixaTexto += ' -> Faixa: 70-100kg';
+                } else if (dados.totais.peso <= 150) {
+                    faixaTexto += ' -> Faixa: 100-150kg';
+                } else if (dados.totais.peso <= 200) {
+                    faixaTexto += ' -> Faixa: 150-200kg';
+                } else {
+                    faixaTexto += ' -> Faixa: >200kg (fixo + excedente)';
+                }
+                
+                doc.text(limpar(faixaTexto), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('Valor da faixa = R$ ' + dados.totais.freteBase.toFixed(2)), margin + 3, yPos);
+                yPos += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('2. PEDAGIO'), margin, yPos);
+                yPos += 8;
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Formula: TETO(' + dados.totais.peso.toFixed(1) + ' / 100) x R$ 5,50'), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('Calculo: ' + Math.ceil(dados.totais.peso / 100) + ' fracoes x R$ 5,50 = R$ ' + dados.totais.pedagio.toFixed(2)), margin + 3, yPos);
+                yPos += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('3. AD VALOREM (0,50%)'), margin, yPos);
+                yPos += 8;
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Formula: Valor NF x 0,005'), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('Calculo: R$ ' + dados.totais.valorNota.toFixed(2) + ' x 0,005 = R$ ' + dados.totais.adv.toFixed(2)), margin + 3, yPos);
+                yPos += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('4. GRIS (0,20% - minimo R$ 5,25)'), margin, yPos);
+                yPos += 8;
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Formula: MAX(Valor NF x 0,002, 5,25)'), margin + 3, yPos);
+                yPos += 5;
+                var grisCalc = dados.totais.valorNota * 0.002;
+                doc.text(limpar('Calculo: MAX(R$ ' + grisCalc.toFixed(2) + ', R$ 5,25) = R$ ' + dados.totais.gris.toFixed(2)), margin + 3, yPos);
+                yPos += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('5. SEC/CAT'), margin, yPos);
+                yPos += 8;
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Formula: Qtd Produtos x R$ 37,50'), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('Calculo: ' + dados.produtos.length + ' produto(s) x R$ 37,50 = R$ ' + dados.totais.secCat.toFixed(2)), margin + 3, yPos);
+                yPos += 10;
+
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('6. TOTAL GERAL'), margin, yPos);
+                yPos += 8;
+                doc.setFont("helvetica", "normal");
+                doc.text(limpar('Formula: Frete Base + Pedagio + ADV + GRIS + SEC/CAT'), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('Calculo:'), margin + 3, yPos);
+                yPos += 5;
+                doc.text(limpar('  R$ ' + dados.totais.freteBase.toFixed(2) + ' (Frete)'), margin + 5, yPos);
+                yPos += 5;
+                doc.text(limpar('+ R$ ' + dados.totais.pedagio.toFixed(2) + ' (Pedagio)'), margin + 5, yPos);
+                yPos += 5;
+                doc.text(limpar('+ R$ ' + dados.totais.adv.toFixed(2) + ' (ADV)'), margin + 5, yPos);
+                yPos += 5;
+                doc.text(limpar('+ R$ ' + dados.totais.gris.toFixed(2) + ' (GRIS)'), margin + 5, yPos);
+                yPos += 5;
+                doc.text(limpar('+ R$ ' + dados.totais.secCat.toFixed(2) + ' (SEC/CAT)'), margin + 5, yPos);
+                yPos += 5;
+                doc.setFont("helvetica", "bold");
+                doc.text(limpar('= R$ ' + dados.totais.frete.toFixed(2) + ' TOTAL'), margin + 5, yPos);
+                yPos += 10;
+
+                doc.setFontSize(10);
+                doc.text(limpar('Preco medio por kg: R$ ' + dados.totais.frete.toFixed(2) + ' / ' + dados.totais.peso.toFixed(1) + 'kg = R$ ' + dados.totais.precoMedioKg.toFixed(4) + '/kg'), margin + 3, yPos);
+
+                // Rodapé
+                yPos = pageHeight - 20;
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "italic");
+                doc.text('Calculadora de Frete Usiquimica - AMAZON TRANSPORTES', pageWidth/2, yPos, { align: 'center' });
+                yPos += 4;
+                doc.text(limpar('Documento gerado automaticamente para uso interno e auditoria'), pageWidth/2, yPos, { align: 'center' });
+
+                const dataArquivo = agora.toLocaleDateString('pt-BR').replace(/\//g, '-');
+                const horaArquivo = agora.toLocaleTimeString('pt-BR').replace(/:/g, '-').replace(/\s/g, '');
+                const destinoLimpo = limpar(dados.rota.split(' → ')[1] || 'Destino').replace(/[^a-zA-Z0-9]/g, '_');
+                
+                const nomeArquivo = `Cotacao_AMAZON_${destinoLimpo}_${dataArquivo}_${horaArquivo}.pdf`;
+
+                doc.save(nomeArquivo);
+                
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF: ' + error.message + '. Tente novamente.');
+            }
+        }
+
+        function limparFormulario() {
+            produtos = [];
+            contadorProduto = 0;
+            document.getElementById('resultContainer').classList.remove('show');
+            document.getElementById('origem').value = '';
+            document.getElementById('destino').value = '';
+            adicionarProduto();
+        }
+
+        function mostrarMetodologia(tipoCalculo) {
+            var modal = document.getElementById('methodologyModal');
+            var fracionadaMethod = document.getElementById('fracionadaMethodology');
+
+            fracionadaMethod.style.display = 'none';
+            fracionadaMethod.innerHTML = '';
+
+            if (tipoCalculo === 'fracionada') {
+                atualizarMetodologiaFracionada();
+                fracionadaMethod.style.display = 'block';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function atualizarMetodologiaFracionada() {
+            var dados = ultimoCalculoRealizado;
+            var pesoTotal = dados.totais ? dados.totais.peso || 0 : 0;
+            var valorNotaTotal = dados.totais ? dados.totais.valorNota || 0 : 0;
+            var rota = dados.rota || '';
+            var totalGeral = dados.totais ? dados.totais.frete || 0 : 0;
+
+            var html = '<h3>📦 Metodologia Completa - Carga Fracionada AMAZON</h3>';
+            
+            html += '<div class="formula-box">';
+            html += '<strong>SEU CÁLCULO:</strong><br>';
+            html += '• ' + (dados.produtos ? dados.produtos.length : 0) + ' produto(s)<br>';
+            html += '• ' + pesoTotal.toFixed(1) + 'kg total<br>';
+            html += '• ' + rota + '<br>';
+            html += '• NF total: R$ ' + valorNotaTotal.toFixed(2);
+            html += '</div>';
+
+            html += '<div class="warning-box">';
+            html += '<h4>🚛 COMO FUNCIONA O SISTEMA AMAZON</h4>';
+            html += '<p>A AMAZON usa um sistema de <strong>FAIXAS DE PESO FIXAS</strong>:</p>';
+            html += '<ul style="margin-left: 20px;">';
+            html += '<li><strong>Até 10kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>10,01 a 20kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>20,01 a 30kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>30,01 a 50kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>50,01 a 70kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>70,01 a 100kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>100,01 a 150kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>150,01 a 200kg:</strong> Valor fixo da tabela</li>';
+            html += '<li><strong>Acima de 200kg:</strong> Valor da faixa 200kg + (peso - 200) × valor excedente/kg</li>';
+            html += '</ul>';
+            html += '</div>';
+
+            if (dados.produtos && dados.produtos.length > 0 && dados.totais) {
+                html += '<h4>📢 PASSO A PASSO DETALHADO</h4>';
+                
+                html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                html += '<h4 style="color: #0000A3;">PASSO 1 - CALCULAR O FRETE BASE</h4>';
+                
+                html += '<p><strong>Identificar a faixa de peso:</strong></p>';
+                html += '<div class="formula-box">';
+                html += '<strong>Peso total:</strong> ' + pesoTotal.toFixed(1) + 'kg<br>';
+                
+                var faixaTexto = '';
+                if (pesoTotal <= 10) {
+                    faixaTexto = 'Faixa: Até 10kg';
+                } else if (pesoTotal <= 20) {
+                    faixaTexto = 'Faixa: 10,01 a 20kg';
+                } else if (pesoTotal <= 30) {
+                    faixaTexto = 'Faixa: 20,01 a 30kg';
+                } else if (pesoTotal <= 50) {
+                    faixaTexto = 'Faixa: 30,01 a 50kg';
+                } else if (pesoTotal <= 70) {
+                    faixaTexto = 'Faixa: 50,01 a 70kg';
+                } else if (pesoTotal <= 100) {
+                    faixaTexto = 'Faixa: 70,01 a 100kg';
+                } else if (pesoTotal <= 150) {
+                    faixaTexto = 'Faixa: 100,01 a 150kg';
+                } else if (pesoTotal <= 200) {
+                    faixaTexto = 'Faixa: 150,01 a 200kg';
+                } else {
+                    faixaTexto = 'Faixa: Acima de 200kg (usa valor 200kg + excedente)';
+                }
+                
+                html += '<strong>' + faixaTexto + '</strong><br>';
+                html += '<strong>Valor da faixa na tabela:</strong> R$ ' + dados.totais.freteBase.toFixed(2);
+                html += '</div>';
+
+                html += '<div class="example-box">';
+                html += '<strong>Por que este valor?</strong><br>';
+                if (pesoTotal <= 200) {
+                    html += 'Seu peso (' + pesoTotal.toFixed(1) + 'kg) está na faixa ' + faixaTexto.split(':')[1] + '.<br>';
+                    html += 'Nesta faixa, o valor fixo da tabela é R$ ' + dados.totais.freteBase.toFixed(2);
+                } else {
+                    var excedente = pesoTotal - 200;
+                    html += 'Seu peso (' + pesoTotal.toFixed(1) + 'kg) está acima de 200kg.<br>';
+                    html += 'Cálculo: Valor 200kg + (' + pesoTotal.toFixed(1) + ' - 200) × valor excedente/kg<br>';
+                    html += 'Resultado: R$ ' + dados.totais.freteBase.toFixed(2);
+                }
+                html += '</div>';
+                html += '</div>';
+
+                // Pedágio
+                html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                html += '<h4 style="color: #0000A3;">PASSO 2 - PEDÁGIO (POR FRAÇÃO DE 100KG)</h4>';
+                html += '<p><strong>Como funciona:</strong> R$ 5,50 por cada fração de 100kg</p>';
+                html += '<div class="formula-box">';
+                html += '<strong>Fórmula:</strong> TETO(' + pesoTotal.toFixed(1) + ' / 100) × R$ 5,50<br><br>';
+                html += '<strong>Cálculo passo a passo:</strong><br>';
+                html += '1. Dividir peso por 100: ' + pesoTotal.toFixed(1) + ' / 100 = ' + (pesoTotal / 100).toFixed(2) + '<br>';
+                html += '2. Arredondar para cima (TETO): ' + Math.ceil(pesoTotal / 100) + ' frações<br>';
+                html += '3. Multiplicar por R$ 5,50: ' + Math.ceil(pesoTotal / 100) + ' × R$ 5,50 = <strong>R$ ' + dados.totais.pedagio.toFixed(2) + '</strong>';
+                html += '</div>';
+                html += '</div>';
+
+                // ADV
+                html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                html += '<h4 style="color: #0000A3;">PASSO 3 - AD VALOREM (0,50%)</h4>';
+                html += '<p><strong>O que é:</strong> Taxa sobre o valor da mercadoria (seguro)</p>';
+                html += '<div class="formula-box">';
+                html += '<strong>Fórmula:</strong> Valor NF × 0,005<br><br>';
+                html += '<strong>Cálculo:</strong><br>';
+                html += 'R$ ' + valorNotaTotal.toFixed(2) + ' × 0,005 = <strong>R$ ' + dados.totais.adv.toFixed(2) + '</strong>';
+                html += '</div>';
+                html += '</div>';
+
+                // GRIS
+                html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                html += '<h4 style="color: #0000A3;">PASSO 4 - GRIS (0,20% - MÍNIMO R$ 5,25)</h4>';
+                html += '<p><strong>O que é:</strong> Gerenciamento de Risco</p>';
+                html += '<div class="formula-box">';
+                html += '<strong>Fórmula:</strong> MAX(Valor NF × 0,002, 5,25)<br><br>';
+                html += '<strong>Cálculo passo a passo:</strong><br>';
+                var grisCalc = valorNotaTotal * 0.002;
+                html += '1. Calcular 0,20%: R$ ' + valorNotaTotal.toFixed(2) + ' × 0,002 = R$ ' + grisCalc.toFixed(2) + '<br>';
+                html += '2. Comparar com mínimo: MAX(R$ ' + grisCalc.toFixed(2) + ', R$ 5,25)<br>';
+                html += '3. Resultado: <strong>R$ ' + dados.totais.gris.toFixed(2) + '</strong>';
+                if (grisCalc < 5.25) {
+                    html += '<br><em>Como R$ ' + grisCalc.toFixed(2) + ' é menor que R$ 5,25, usa-se o valor mínimo.</em>';
+                }
+                html += '</div>';
+                html += '</div>';
+
+                // SEC/CAT
+                html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                html += '<h4 style="color: #0000A3;">PASSO 5 - SEC/CAT</h4>';
+                html += '<p><strong>Como funciona:</strong> R$ 37,50 por conhecimento (CT-e)</p>';
+                html += '<div class="formula-box">';
+                html += '<strong>Fórmula:</strong> Quantidade de Produtos × R$ 37,50<br><br>';
+                html += '<strong>Cálculo:</strong><br>';
+                html += dados.produtos.length + ' produto(s) × R$ 37,50 = <strong>R$ ' + dados.totais.secCat.toFixed(2) + '</strong>';
+                html += '</div>';
+                html += '</div>';
+
+                // Distribuição por produto
+                if (dados.produtos.length > 1) {
+                    html += '<h4>📊 DISTRIBUIÇÃO POR PRODUTO</h4>';
+                    html += '<p>Como temos múltiplos produtos, distribuímos os custos proporcionalmente:</p>';
+                    
+                    dados.produtos.forEach(function(item, index) {
+                        html += '<div class="methodology-section" style="border-left-color: #0000A3;">';
+                        html += '<h4 style="color: #0000A3;">PRODUTO ' + (index + 1) + ': ' + item.produto.nome + '</h4>';
+                        
+                        var proporcaoPeso = (item.produto.peso / pesoTotal * 100).toFixed(1);
+                        var proporcaoNota = valorNotaTotal > 0 ? (item.produto.valorNota / valorNotaTotal * 100).toFixed(1) : 0;
+                        
+                        html += '<div class="example-box">';
+                        html += '<strong>Características:</strong><br>';
+                        html += '• Peso: ' + item.produto.peso + 'kg (' + proporcaoPeso + '% do total)<br>';
+                        html += '• Valor NF: R$ ' + item.produto.valorNota.toFixed(2) + ' (' + proporcaoNota + '% do total)<br><br>';
+                        
+                        html += '<strong>Distribuição de custos:</strong><br>';
+                        html += '• Frete base: R$ ' + dados.totais.freteBase.toFixed(2) + ' × ' + proporcaoPeso + '% = R$ ' + item.freteBase.toFixed(2) + '<br>';
+                        html += '• Pedágio: R$ ' + dados.totais.pedagio.toFixed(2) + ' × ' + proporcaoPeso + '% = R$ ' + item.pedagio.toFixed(2) + '<br>';
+                        html += '• ADV: R$ ' + dados.totais.adv.toFixed(2) + ' × ' + proporcaoNota + '% = R$ ' + item.adv.toFixed(2) + '<br>';
+                        html += '• GRIS: R$ ' + dados.totais.gris.toFixed(2) + ' × ' + proporcaoNota + '% = R$ ' + item.gris.toFixed(2) + '<br>';
+                        html += '• SEC/CAT: R$ ' + item.secCat.toFixed(2) + ' (fixo por produto)<br>';
+                        html += '<hr style="margin: 10px 0;">';
+                        html += '<strong>TOTAL PRODUTO:</strong> R$ ' + item.total.toFixed(2) + '<br>';
+                        html += '<strong>Preço/kg:</strong> R$ ' + item.total.toFixed(2) + ' ÷ ' + item.produto.peso + 'kg = R$ ' + item.precoKg.toFixed(4) + '/kg<br>';
+                        html += '<strong style="color: #d97706;">VALOR ÔMEGA:</strong> R$ ' + item.total.toFixed(2) + ' ÷ (' + item.produto.peso + 'kg ÷ 1000) = R$ ' + item.valorOmega.toFixed(2) + '/ton';
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                }
+            }
+
+            html += '<h4>💰 TOTAL FINAL - SOMA DE TODOS OS CUSTOS</h4>';
+            html += '<div class="formula-box">';
+            html += '<strong>Fórmula:</strong><br>';
+            html += 'Total = Frete Base + Pedágio + ADV + GRIS + SEC/CAT<br><br>';
+            html += '<strong>Cálculo:</strong><br>';
+            html += '  R$ ' + dados.totais.freteBase.toFixed(2) + ' (Frete Base)<br>';
+            html += '+ R$ ' + dados.totais.pedagio.toFixed(2) + ' (Pedágio)<br>';
+            html += '+ R$ ' + dados.totais.adv.toFixed(2) + ' (ADV 0,50%)<br>';
+            html += '+ R$ ' + dados.totais.gris.toFixed(2) + ' (GRIS 0,20%)<br>';
+            html += '+ R$ ' + dados.totais.secCat.toFixed(2) + ' (SEC/CAT)<br>';
+            html += '───────────────────<br>';
+            html += '<strong style="font-size: 1.2em;">= R$ ' + totalGeral.toFixed(2) + ' TOTAL GERAL</strong><br><br>';
+            html += '<strong>Preço médio por kg:</strong><br>';
+            html += 'R$ ' + totalGeral.toFixed(2) + ' ÷ ' + pesoTotal.toFixed(1) + 'kg = <strong>R$ ' + (totalGeral/pesoTotal).toFixed(4) + '/kg</strong>';
+            html += '</div>';
+
+            html += '<div class="example-box" style="margin-top: 20px;">';
+            html += '<h4>✅ VALIDAÇÃO DO CÁLCULO</h4>';
+            html += '<p><strong>Conferência final:</strong></p>';
+            html += '1. ✓ Faixa de peso correta identificada<br>';
+            html += '2. ✓ Pedágio calculado por fração de 100kg<br>';
+            html += '3. ✓ ADV 0,50% aplicado sobre valor NF<br>';
+            html += '4. ✓ GRIS 0,20% com mínimo R$ 5,25 aplicado<br>';
+            html += '5. ✓ SEC/CAT R$ 37,50 por produto aplicado<br>';
+            html += '6. ✓ Todos os valores somados corretamente<br><br>';
+            html += '<strong>Este cálculo está pronto para auditoria!</strong>';
+            html += '</div>';
+
+            document.getElementById('fracionadaMethodology').innerHTML = html;
+        }
+
+        function fecharModal() {
+            var modal = document.getElementById('methodologyModal');
+            modal.classList.remove('show');
+        }
+
+        window.addEventListener('click', function(event) {
+            var modal = document.getElementById('methodologyModal');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                fecharModal();
+            }
+        });
+    </script>
+</body>
+</html>
